@@ -1,0 +1,64 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/compose-spec/compose-spec/master/schema/compose-spec.json
+name: legacy-crm
+
+services:
+  mysql:
+    image: mysql:5.7
+    ports:
+      - "127.0.0.1:33063:3306"
+    env_file:
+      - .env
+    environment:
+      TZ: Europe/Moscow
+    volumes:
+      - db:/var/lib/mysql
+      - ./prod.conf/etc/mysql/99-custom.cnf:/etc/mysql/conf.d/99-custom.cnf:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mysqladmin ping -h 127.0.0.1 -uroot -p$MYSQL_ROOT_PASSWORD",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - net
+
+  apache:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PUID: ${PUID:-1000}
+        PGID: ${PGID:-1000}
+    image: ${APP_IMAGE_NAME:-legacy-crm:dev}
+    pull_policy: never
+    env_file:
+      - .env
+    environment:
+      TZ: Europe/Moscow
+    volumes:
+      - ${APP_CODE_PATH:-./html/example-crm.local}:/var/www/html/example-crm.local
+      - ${CRM_CONFIG_PATH:-./configs/crm}/config.inc.php:/var/www/html/example-crm.local/crm/config.inc.php:ro
+      - ${CRM_CONFIG_PATH:-./configs/crm}/config.csrf-secret.php:/var/www/html/example-crm.local/crm/config.csrf-secret.php:ro
+      - ${CRM_CONFIG_PATH:-./configs/crm}/config_override.php:/var/www/html/example-crm.local/crm/config_override.php:ro
+      - ${CRM_CONFIG_PATH:-./configs/crm}/.legacy-crm.example:/var/www/html/example-crm.local/crm/.legacy-crm:ro
+      - ./prod.conf/apache2/sites-available/000-default.conf:/etc/apache2/sites-available/000-default.conf:ro
+      - ./prod.conf/apache2/conf.d/99-php.ini:/usr/local/etc/php/conf.d/99-php.ini:ro
+      - ./prod.conf/apache2/conf.d/99-opcache.ini:/usr/local/etc/php/conf.d/99-opcache.ini:ro
+    working_dir: /var/www/html/example-crm.local/crm
+    ports:
+      - "8081:80"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - net
+
+networks:
+  net:
+    driver: bridge # обычная внутренняя сеть; создастся автоматически
+
+volumes:
+  db: {} # стандартный Docker volume для /var/lib/mysql

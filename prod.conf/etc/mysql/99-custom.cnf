@@ -1,0 +1,69 @@
+[mysqld]
+
+# Профиль под VPS: 6 vCPU / 12 GB RAM
+# Баланс: ускорение InnoDB без риска OOM при нагрузке на PHP/Apache.
+innodb_buffer_pool_size = 4G
+innodb_buffer_pool_instances = 4
+innodb_log_file_size = 512M
+innodb_log_buffer_size = 64M
+
+# ВРЕМЯ И ТАЙМЗОНА
+#default-time-zone = 'Europe/Moscow'
+log_timestamps = SYSTEM
+explicit_defaults_for_timestamp = ON
+
+# ДИСК И ВВОД-ВЫВОД
+innodb_flush_log_at_trx_commit = 2
+innodb_flush_method = O_DIRECT
+sync_binlog = 0
+innodb_io_capacity = 2000
+innodb_io_capacity_max = 4000
+innodb_read_io_threads = 4
+innodb_write_io_threads = 4
+innodb_page_cleaners = 4
+innodb_buffer_pool_dump_at_shutdown = ON
+innodb_buffer_pool_load_at_startup = ON
+
+# ПРОИЗВОДИТЕЛЬНОСТЬ КЭШЕЙ И ВРЕМЕННЫХ ТАБЛИЦ
+query_cache_type = 0
+query_cache_size = 0
+tmp_table_size = 64M
+max_heap_table_size = 64M
+table_open_cache = 4096
+table_definition_cache = 2048
+thread_cache_size = 64
+
+# СОЕДИНЕНИЯ И ПАКЕТЫ
+max_connections = 150
+wait_timeout = 600
+interactive_timeout = 600
+max_allowed_packet = 64M
+
+# ЛОГИРОВАНИЕ
+log_error = /var/lib/mysql/error.log
+slow_query_log = 1
+slow_query_log_file = /var/lib/mysql/mysql-slow.log
+long_query_time = 2
+log_queries_not_using_indexes = 0
+log_slow_admin_statements = 0
+
+# КОДИРОВКА
+character-set-server = utf8mb4
+collation-server = utf8mb4_unicode_ci
+init_connect = 'SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;'
+
+# Legacy CRM compatibility:
+# keep modern defaults, but disable ONLY_FULL_GROUP_BY for old vtiger queries.
+sql_mode = STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION
+
+# СНИЖАЕМ СЛУЖЕБНЫЙ ОВЕРХЕД
+performance_schema = OFF
+show_compatibility_56 = OFF
+innodb_stats_persistent_sample_pages = 64
+innodb_status_output = OFF
+innodb_status_output_locks = OFF
+
+# НАДЕЖНОСТЬ И РЕЗЕРВНОЕ КОПИРОВАНИЕ
+# mysql 8: binlog_expire_logs_seconds = 604800
+# expire_logs_days = 7
+# skip-name-resolve = 1
